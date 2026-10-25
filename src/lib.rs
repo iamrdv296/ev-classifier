@@ -1,4 +1,7 @@
+use std::path::PathBuf;
+
 use evdev::{AttributeSetRef, Device, EventType, KeyCode};
+use glob::{GlobError, glob};
 
 const UNKNOWN_NAME: &str = "Uknown Name";
 
@@ -21,6 +24,37 @@ impl<'a> DeviceAttributes<'a> {
     }
 }
 
+const PATH: &str = "/dev/input/event*";
+const GLOB_ERROR_MESSAGE: &str = "Failed to parse input device glob pattern.";
+
+pub fn device_paths(path: Option<&str>) -> Result<Vec<PathBuf>, GlobError> {
+    let path = path.unwrap_or(PATH);
+
+    glob(path).expect(GLOB_ERROR_MESSAGE).collect()
+}
+
+pub fn devices_from_path(path: Option<&str>) -> Option<Vec<Device>> {
+    match device_paths(path) {
+        Ok(device_paths) => {
+            let devices: Vec<Device> = device_paths
+                .into_iter()
+                .filter_map(|path| match Device::open(&path) {
+                    Ok(device) => Some(device),
+                    Err(io_err) => {
+                        eprintln!("Warning: Skipping device at {:?}: {}", &path, io_err);
+                        None
+                    }
+                })
+                .collect();
+
+            if devices.is_empty() { None } else { Some(devices) }
+        }
+        Err(glob_err) => {
+            eprintln!("{}", glob_err);
+            None
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
