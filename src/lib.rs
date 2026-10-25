@@ -33,8 +33,8 @@ pub fn device_paths(path: Option<&str>) -> Result<Vec<PathBuf>, GlobError> {
     glob(path).expect(GLOB_ERROR_MESSAGE).collect()
 }
 
-pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Option<Vec<Device>> {
-    let devices: Vec<Device> = pathbuf
+pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Vec<Device> {
+    pathbuf
         .into_iter()
         .filter_map(|path| match Device::open(&path) {
             Ok(device) => Some(device),
@@ -43,11 +43,5 @@ pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Option<Vec<Device>> {
                 None
             }
         })
-        .collect();
-
-    if devices.is_empty() {
-        None
-    } else {
-        Some(devices)
-    }
+        .collect()
 }
