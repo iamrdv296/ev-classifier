@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use evdev::{AttributeSetRef, Device, EventType, KeyCode};
 use glob::{GlobError, glob};
 
-const UNKNOWN_NAME: &str = "Uknown Name";
+const UNKNOWN_NAME: &str = "Unknown Name";
 
 pub struct DeviceAttributes<'a> {
     pub name: String,
