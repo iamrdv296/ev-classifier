@@ -27,13 +27,13 @@ impl<'a> DeviceAttributes<'a> {
 const PATH: &str = "/dev/input/event*";
 const GLOB_ERROR_MESSAGE: &str = "Failed to parse input device glob pattern.";
 
-pub fn device_paths(path: Option<&str>) -> Result<Vec<PathBuf>, GlobError> {
+fn device_paths(path: Option<&str>) -> Result<Vec<PathBuf>, GlobError> {
     let path = path.unwrap_or(PATH);
 
     glob(path).expect(GLOB_ERROR_MESSAGE).collect()
 }
 
-pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Vec<Device> {
+fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Vec<Device> {
     pathbuf
         .into_iter()
         .filter_map(|path| match Device::open(&path) {
@@ -44,4 +44,12 @@ pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Vec<Device> {
             }
         })
         .collect()
+}
+
+pub fn devices_from_path(path: Option<&str>) -> Vec<Device> {
+    if let Ok(pathbuf) = device_paths(path) {
+        devices_from_pathbuf(pathbuf)
+    } else {
+        vec![]   
+    }
 }
