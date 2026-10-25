@@ -33,25 +33,21 @@ pub fn device_paths(path: Option<&str>) -> Result<Vec<PathBuf>, GlobError> {
     glob(path).expect(GLOB_ERROR_MESSAGE).collect()
 }
 
-pub fn devices_from_path(path: Option<&str>) -> Option<Vec<Device>> {
-    match device_paths(path) {
-        Ok(device_paths) => {
-            let devices: Vec<Device> = device_paths
-                .into_iter()
-                .filter_map(|path| match Device::open(&path) {
-                    Ok(device) => Some(device),
-                    Err(io_err) => {
-                        eprintln!("Warning: Skipping device at {:?}: {}", &path, io_err);
-                        None
-                    }
-                })
-                .collect();
+pub fn devices_from_pathbuf(pathbuf: Vec<PathBuf>) -> Option<Vec<Device>> {
+    let devices: Vec<Device> = pathbuf
+        .into_iter()
+        .filter_map(|path| match Device::open(&path) {
+            Ok(device) => Some(device),
+            Err(io_err) => {
+                eprintln!("Warning: Skipping device at {:?}: {}", &path, io_err);
+                None
+            }
+        })
+        .collect();
 
-            if devices.is_empty() { None } else { Some(devices) }
-        }
-        Err(glob_err) => {
-            eprintln!("{}", glob_err);
-            None
-        }
+    if devices.is_empty() {
+        None
+    } else {
+        Some(devices)
     }
 }
