@@ -15,7 +15,7 @@ pub struct DeviceDiscovery {
     pub skipped: Vec<(PathBuf, std::io::Error)>,
 }
 
-pub fn device_path_bufs(path: Option<&str>) -> Result<Vec<PathBuf>, DevicePathError> {
+fn device_path_bufs(path: Option<&str>) -> Result<Vec<PathBuf>, DevicePathError> {
     let path = path.unwrap_or(PATH);
 
     glob(path)
@@ -24,9 +24,9 @@ pub fn device_path_bufs(path: Option<&str>) -> Result<Vec<PathBuf>, DevicePathEr
         .map_err(DevicePathError::Glob)
 }
 
-pub fn devices_from_pathbuf(pathbufs: Vec<PathBuf>) -> DeviceDiscovery {
+fn devices_from_path_bufs(path_bufs: Vec<PathBuf>) -> DeviceDiscovery {
     let mut skipped = vec![];
-    let devices = pathbufs
+    let devices = path_bufs
         .into_iter()
         .filter_map(|path| match Device::open(&path) {
             Ok(device) => Some(device),
@@ -38,4 +38,11 @@ pub fn devices_from_pathbuf(pathbufs: Vec<PathBuf>) -> DeviceDiscovery {
         .collect();
 
     DeviceDiscovery { devices, skipped }
+}
+
+pub fn discover_devices(path: Option<&str>) -> Result<DeviceDiscovery, DevicePathError> {
+    match device_path_bufs(path) {
+        Ok(path_bufs) => Ok(devices_from_path_bufs(path_bufs)),
+        Err(error) => Err(error)
+    }
 }
