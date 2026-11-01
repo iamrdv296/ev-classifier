@@ -25,8 +25,8 @@ pub struct DeviceAttributes<'a> {
 // its necessary to use an explicit lifetime as AttributeSetRef doesn't have a
 // known size at compile time and it is dependent on the device's lifetime.
 
-impl<'a> DeviceAttributes<'a> {
-    pub fn from_device(device: &'a Device) -> Self {
+impl<'a> From<&'a Device> for DeviceAttributes<'a> {
+    fn from(device: &'a Device) -> Self {
         Self {
             name: device.name().unwrap_or(UNKNOWN_NAME),
             supported_events: device.supported_events(),
@@ -55,6 +55,20 @@ impl<'a> From<DeviceAttributes<'a>> for OwnedDeviceAttributes {
             name: attributes.name.to_owned(),
             supported_events: attributes.supported_events.iter().collect(),
             supported_keys: attributes.supported_keys.map(|keys| keys.iter().collect()),
+        }
+    }
+}
+
+impl OwnedDeviceAttributes {
+    pub fn new(
+        name: String,
+        supported_events: AttributeSet<EventType>,
+        supported_keys: Option<AttributeSet<KeyCode>>,
+    ) -> Self {
+        Self {
+            name,
+            supported_events,
+            supported_keys,
         }
     }
 }

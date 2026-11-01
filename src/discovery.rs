@@ -33,7 +33,7 @@ impl DeviceDiscovery {
                 }
             })
             .collect();
-    
+
         Self { devices, skipped }
     }
 }
