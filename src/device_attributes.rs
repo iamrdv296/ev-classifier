@@ -64,8 +64,10 @@ impl DeviceAttributesLike for OwnedDeviceAttributes {
     fn has_event(&self, event: EventType) -> bool {
         self.supported_events.contains(&event)
     }
-    
+
     fn has_key(&self, key: KeyCode) -> bool {
-        self.supported_keys.as_ref().map_or(false, |keys| keys.contains(&key))
+        self.supported_keys
+            .as_ref()
+            .map_or(false, |keys| keys.contains(&key))
     }
 }
