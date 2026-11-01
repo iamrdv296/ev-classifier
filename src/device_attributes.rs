@@ -2,15 +2,21 @@ use evdev::{AttributeSetRef, Device, EventType, KeyCode};
 
 const UNKNOWN_NAME: &str = "Unknown Name";
 
+trait DeviceAttributesLike {
+    fn name(&self) -> &str;
+    fn has_event(&self, event: EventType) -> bool;
+    fn has_key(&self, key: KeyCode) -> bool;
+}
+
 #[derive(Debug, Clone)]
 pub struct OwnedDeviceAttributes {
-    pub name: String,
+    name: String,
     pub supported_events: Vec<EventType>,
     pub supported_keys: Option<Vec<KeyCode>>,
 }
 
 pub struct DeviceAttributes<'a> {
-    pub name: String,
+    name: String,
     pub supported_events: &'a AttributeSetRef<EventType>,
     pub supported_keys: Option<&'a AttributeSetRef<KeyCode>>,
 }
@@ -33,5 +39,33 @@ impl<'a> DeviceAttributes<'a> {
             supported_events: self.supported_events.iter().collect(),
             supported_keys: self.supported_keys.map(|keys| keys.iter().collect()),
         }
+    }
+}
+
+impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn has_event(&self, event: EventType) -> bool {
+        self.supported_events.contains(event)
+    }
+
+    fn has_key(&self, key: KeyCode) -> bool {
+        self.supported_keys.map_or(false, |keys| keys.contains(key))
+    }
+}
+
+impl DeviceAttributesLike for OwnedDeviceAttributes {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn has_event(&self, event: EventType) -> bool {
+        self.supported_events.contains(&event)
+    }
+    
+    fn has_key(&self, key: KeyCode) -> bool {
+        self.supported_keys.as_ref().map_or(false, |keys| keys.contains(&key))
     }
 }
