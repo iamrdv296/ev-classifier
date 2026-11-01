@@ -1,5 +1,6 @@
 pub mod device_attributes;
-pub mod devices_from_path;
+pub mod discovery;
+pub mod classifier;
 
-pub use devices_from_path::{DeviceDiscovery, DevicePathError, discover_devices};
+pub use discovery::{DeviceDiscovery, DevicePathError};
 pub use device_attributes::{DeviceAttributes, OwnedDeviceAttributes};

@@ -2,7 +2,7 @@ use evdev::{AttributeSetRef, Device, EventType, KeyCode};
 
 const UNKNOWN_NAME: &str = "Unknown Name";
 
-trait DeviceAttributesLike {
+pub trait DeviceAttributesLike {
     fn name(&self) -> &str;
     fn has_event(&self, event: EventType) -> bool;
     fn has_key(&self, key: KeyCode) -> bool;
