@@ -15,6 +15,7 @@ pub struct OwnedDeviceAttributes {
     pub supported_keys: Option<AttributeSet<KeyCode>>,
 }
 
+#[derive(Copy, Clone)]
 pub struct DeviceAttributes<'a> {
     pub name: &'a str,
     pub supported_events: &'a AttributeSetRef<EventType>,
@@ -36,7 +37,7 @@ impl<'a> DeviceAttributes<'a> {
 
 impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
     fn name(&self) -> &str {
-        &self.name
+        self.name
     }
 
     fn has_event(&self, event: EventType) -> bool {
@@ -44,7 +45,7 @@ impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
     }
 
     fn has_key(&self, key: KeyCode) -> bool {
-        self.supported_keys.map_or(false, |keys| keys.contains(key))
+        self.supported_keys.is_some_and(|keys| keys.contains(key))
     }
 }
 
