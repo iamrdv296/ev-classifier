@@ -1,23 +1,21 @@
 use evdev::{AttributeSet, AttributeSetRef, Device, EventType, KeyCode};
 
-const UNKNOWN_NAME: &str = "Unknown Name";
-
 pub trait DeviceAttributesLike {
-    fn name(&self) -> &str;
+    fn name(&self) -> Option<&str>;
     fn has_event(&self, event: EventType) -> bool;
     fn has_key(&self, key: KeyCode) -> bool;
 }
 
 #[derive(Debug, Clone)]
 pub struct OwnedDeviceAttributes {
-    pub name: String,
+    pub name: Option<String>,
     pub supported_events: AttributeSet<EventType>,
     pub supported_keys: Option<AttributeSet<KeyCode>>,
 }
 
 #[derive(Copy, Clone)]
 pub struct DeviceAttributes<'a> {
-    pub name: &'a str,
+    pub name: Option<&'a str>,
     pub supported_events: &'a AttributeSetRef<EventType>,
     pub supported_keys: Option<&'a AttributeSetRef<KeyCode>>,
 }
@@ -28,7 +26,7 @@ pub struct DeviceAttributes<'a> {
 impl<'a> From<&'a Device> for DeviceAttributes<'a> {
     fn from(device: &'a Device) -> Self {
         Self {
-            name: device.name().unwrap_or(UNKNOWN_NAME),
+            name: device.name(),
             supported_events: device.supported_events(),
             supported_keys: device.supported_keys(),
         }
@@ -36,7 +34,7 @@ impl<'a> From<&'a Device> for DeviceAttributes<'a> {
 }
 
 impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
-    fn name(&self) -> &str {
+    fn name(&self) -> Option<&str> {
         self.name
     }
 
@@ -52,7 +50,7 @@ impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
 impl<'a> From<DeviceAttributes<'a>> for OwnedDeviceAttributes {
     fn from(attributes: DeviceAttributes<'a>) -> Self {
         Self {
-            name: attributes.name.to_owned(),
+            name: attributes.name.map(|name| name.to_owned()),
             supported_events: attributes.supported_events.iter().collect(),
             supported_keys: attributes.supported_keys.map(|keys| keys.iter().collect()),
         }
@@ -61,7 +59,7 @@ impl<'a> From<DeviceAttributes<'a>> for OwnedDeviceAttributes {
 
 impl OwnedDeviceAttributes {
     pub fn new(
-        name: String,
+        name: Option<String>,
         supported_events: AttributeSet<EventType>,
         supported_keys: Option<AttributeSet<KeyCode>>,
     ) -> Self {
@@ -74,8 +72,11 @@ impl OwnedDeviceAttributes {
 }
 
 impl DeviceAttributesLike for OwnedDeviceAttributes {
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> Option<&str> {
+        match &self.name {
+            Some(name) => Some(name),
+            None => None
+        }
     }
 
     fn has_event(&self, event: EventType) -> bool {
