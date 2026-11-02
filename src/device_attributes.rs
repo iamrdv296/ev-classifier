@@ -57,26 +57,9 @@ impl<'a> From<DeviceAttributes<'a>> for OwnedDeviceAttributes {
     }
 }
 
-impl OwnedDeviceAttributes {
-    pub fn new(
-        name: Option<String>,
-        supported_events: AttributeSet<EventType>,
-        supported_keys: Option<AttributeSet<KeyCode>>,
-    ) -> Self {
-        Self {
-            name,
-            supported_events,
-            supported_keys,
-        }
-    }
-}
-
 impl DeviceAttributesLike for OwnedDeviceAttributes {
     fn name(&self) -> Option<&str> {
-        match &self.name {
-            Some(name) => Some(name),
-            None => None
-        }
+        self.name.as_deref()
     }
 
     fn has_event(&self, event: EventType) -> bool {

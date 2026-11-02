@@ -1,24 +1,20 @@
 use evdev::Device;
-use glob::{GlobError, PatternError, glob};
-use std::path::PathBuf;
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
-const PATH: &str = "/dev/input/event*";
-
-#[derive(Debug)]
-pub enum DevicePathError {
-    Glob(GlobError),
-    Pattern(PatternError),
-}
+const DEFAULT_DIR: &str = "/dev/input";
+const PREFIX: &str = "event";
 
 pub struct DeviceDiscovery {
     pub devices: Vec<Device>,
-    pub skipped: Vec<(PathBuf, std::io::Error)>,
+    pub skipped: Vec<(PathBuf, io::Error)>,
 }
 
 impl DeviceDiscovery {
-    pub fn from_path(path: Option<&str>) -> Result<Self, DevicePathError> {
-        let path_bufs = device_path_bufs(path)?;
-        Ok(Self::from_path_bufs(path_bufs))
+    pub fn from_path(path: Option<&Path>) -> io::Result<Self> {
+        Ok(Self::from_path_bufs(device_path_bufs(path)?))
     }
 
     fn from_path_bufs(path_bufs: Vec<PathBuf>) -> Self {
@@ -38,11 +34,26 @@ impl DeviceDiscovery {
     }
 }
 
-fn device_path_bufs(path: Option<&str>) -> Result<Vec<PathBuf>, DevicePathError> {
-    let path = path.unwrap_or(PATH);
+fn device_path_bufs(path: Option<&Path>) -> io::Result<Vec<PathBuf>> {
+    let target = path.unwrap_or_else(|| Path::new(DEFAULT_DIR));
 
-    glob(path)
-        .map_err(DevicePathError::Pattern)?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(DevicePathError::Glob)
+    if !fs::metadata(target)?.is_dir() {
+        return Ok(vec![target.to_path_buf()]);
+    }
+
+    let mut found: Vec<(u32, PathBuf)> = Vec::new();
+    for entry in fs::read_dir(target)? {
+        let path = entry?.path();
+        let number = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|n| n.strip_prefix(PREFIX))
+            .and_then(|n| n.parse::<u32>().ok());
+        if let Some(n) = number {
+            found.push((n, path));
+        }
+    }
+
+    found.sort_by_key(|(n, _)| *n);
+    Ok(found.into_iter().map(|(_, p)| p).collect())
 }

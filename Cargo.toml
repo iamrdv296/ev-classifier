@@ -5,4 +5,3 @@ edition = "2024"
 
 [dependencies]
 evdev = "0.13.2"
-glob = "0.3.4"
