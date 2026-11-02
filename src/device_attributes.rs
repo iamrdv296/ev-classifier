@@ -54,4 +54,4 @@ impl DeviceAttributesLike for Device {
     }
 }
 
-// TODO: Make this more DRY maybe this kinda sucks rn
+// TODO: Make this more DRY - also, make other traits like AxisDeviceAttributesLike
