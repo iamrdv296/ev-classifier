@@ -1,4 +1,4 @@
-use evdev::{AttributeSet, AttributeSetRef, Device, EventType, KeyCode};
+use evdev::{AttributeSet, Device, EventType, KeyCode};
 
 pub trait DeviceAttributesLike {
     fn name(&self) -> Option<&str>;
@@ -7,57 +7,26 @@ pub trait DeviceAttributesLike {
 }
 
 #[derive(Debug, Clone)]
-pub struct OwnedDeviceAttributes {
+pub struct DeviceAttributes {
     pub name: Option<String>,
     pub supported_events: AttributeSet<EventType>,
-    pub supported_keys: Option<AttributeSet<KeyCode>>,
+    pub supported_keys: AttributeSet<KeyCode>,
 }
 
-#[derive(Copy, Clone)]
-pub struct DeviceAttributes<'a> {
-    pub name: Option<&'a str>,
-    pub supported_events: &'a AttributeSetRef<EventType>,
-    pub supported_keys: Option<&'a AttributeSetRef<KeyCode>>,
-}
-
-// its necessary to use an explicit lifetime as AttributeSetRef doesn't have a
-// known size at compile time and it is dependent on the device's lifetime.
-
-impl<'a> From<&'a Device> for DeviceAttributes<'a> {
-    fn from(device: &'a Device) -> Self {
+impl From<&Device> for DeviceAttributes {
+    fn from(device: &Device) -> Self {
         Self {
-            name: device.name(),
-            supported_events: device.supported_events(),
-            supported_keys: device.supported_keys(),
+            name: device.name().map(str::to_string),
+            supported_events: device.supported_events().iter().collect(),
+            supported_keys: device
+                .supported_keys()
+                .map(|keys| keys.iter().collect())
+                .unwrap_or_default(),
         }
     }
 }
 
-impl<'a> DeviceAttributesLike for DeviceAttributes<'a> {
-    fn name(&self) -> Option<&str> {
-        self.name
-    }
-
-    fn has_event(&self, event: EventType) -> bool {
-        self.supported_events.contains(event)
-    }
-
-    fn has_key(&self, key: KeyCode) -> bool {
-        self.supported_keys.is_some_and(|keys| keys.contains(key))
-    }
-}
-
-impl<'a> From<DeviceAttributes<'a>> for OwnedDeviceAttributes {
-    fn from(attributes: DeviceAttributes<'a>) -> Self {
-        Self {
-            name: attributes.name.map(|name| name.to_owned()),
-            supported_events: attributes.supported_events.iter().collect(),
-            supported_keys: attributes.supported_keys.map(|keys| keys.iter().collect()),
-        }
-    }
-}
-
-impl DeviceAttributesLike for OwnedDeviceAttributes {
+impl DeviceAttributesLike for DeviceAttributes {
     fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
@@ -67,8 +36,22 @@ impl DeviceAttributesLike for OwnedDeviceAttributes {
     }
 
     fn has_key(&self, key: KeyCode) -> bool {
-        self.supported_keys
-            .as_ref()
-            .is_some_and(|keys| keys.contains(key))
+        self.supported_keys.contains(key)
     }
 }
+
+impl DeviceAttributesLike for Device {
+    fn name(&self) -> Option<&str> {
+        self.name()
+    }
+
+    fn has_event(&self, event: EventType) -> bool {
+        self.supported_events().contains(event)
+    }
+
+    fn has_key(&self, key: KeyCode) -> bool {
+        self.supported_keys().is_some_and(|sk| sk.contains(key))
+    }
+}
+
+// TODO: Make this more DRY maybe this kinda sucks rn
