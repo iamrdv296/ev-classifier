@@ -1,5 +1,13 @@
 use evdev::{AbsoluteAxisCode, AttributeSetRef, Device, KeyCode, PropType, RelativeAxisCode};
 
+const MT_AXES: [AbsoluteAxisCode; 5] = [
+    AbsoluteAxisCode::ABS_MT_SLOT,
+    AbsoluteAxisCode::ABS_MT_TOUCH_MAJOR,
+    AbsoluteAxisCode::ABS_MT_POSITION_X,
+    AbsoluteAxisCode::ABS_MT_POSITION_Y,
+    AbsoluteAxisCode::ABS_MT_TRACKING_ID,
+];
+
 pub trait DeviceInfo {
     fn name(&self) -> Option<&str>;
     fn supported_keys(&self) -> Option<&AttributeSetRef<KeyCode>>;
@@ -26,11 +34,59 @@ pub trait DeviceInfo {
     }
 
     fn rel_xy(&self) -> bool {
-        self.has_relative(RelativeAxisCode::REL_X) && self.has_relative(RelativeAxisCode::REL_Y)
+        self.has_all_relative(&[RelativeAxisCode::REL_X, RelativeAxisCode::REL_Y])
     }
 
     fn abs_xy(&self) -> bool {
-        self.has_absolute(AbsoluteAxisCode::ABS_X) && self.has_absolute(AbsoluteAxisCode::ABS_Y)
+        self.has_all_absolute(&[AbsoluteAxisCode::ABS_X, AbsoluteAxisCode::ABS_Y])
+    }
+
+    fn has_any_key(&self, keys: &[KeyCode]) -> bool {
+        keys.iter().any(|&k| self.has_key(k))
+    }
+
+    fn has_all_keys(&self, keys: &[KeyCode]) -> bool {
+        keys.iter().all(|&k| self.has_key(k))
+    }
+
+    fn has_any_relative(&self, axes: &[RelativeAxisCode]) -> bool {
+        axes.iter().any(|&a| self.has_relative(a))
+    }
+
+    fn has_all_relative(&self, axes: &[RelativeAxisCode]) -> bool {
+        axes.iter().all(|&a| self.has_relative(a))
+    }
+
+    fn has_any_absolute(&self, axes: &[AbsoluteAxisCode]) -> bool {
+        axes.iter().any(|&a| self.has_absolute(a))
+    }
+
+    fn has_all_absolute(&self, axes: &[AbsoluteAxisCode]) -> bool {
+        axes.iter().all(|&a| self.has_absolute(a))
+    }
+
+    fn has_any_property(&self, props: &[PropType]) -> bool {
+        props.iter().any(|&p| self.has_property(p))
+    }
+
+    fn abs_mt_xy(&self) -> bool {
+        self.has_all_absolute(&[
+            AbsoluteAxisCode::ABS_MT_POSITION_X,
+            AbsoluteAxisCode::ABS_MT_POSITION_Y,
+        ])
+    }
+
+    fn has_mt_axis(&self) -> bool {
+        self.has_any_absolute(&MT_AXES)
+    }
+
+    fn has_wheel(&self) -> bool {
+        self.has_any_relative(&[
+            RelativeAxisCode::REL_WHEEL,
+            RelativeAxisCode::REL_HWHEEL,
+            RelativeAxisCode::REL_WHEEL_HI_RES,
+            RelativeAxisCode::REL_HWHEEL_HI_RES,
+        ])
     }
 }
 
