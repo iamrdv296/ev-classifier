@@ -1,57 +1,30 @@
-use evdev::{AttributeSet, Device, EventType, KeyCode};
+use evdev::{
+    AbsoluteAxisCode, AttributeSet, KeyCode, PropType, RelativeAxisCode,
+};
+use std::io;
 
-pub trait DeviceAttributesLike {
+pub trait DeviceInfo {
     fn name(&self) -> Option<&str>;
-    fn has_event(&self, event: EventType) -> bool;
-    fn has_key(&self, key: KeyCode) -> bool;
-}
-
-#[derive(Debug, Clone)]
-pub struct DeviceAttributes {
-    pub name: Option<String>,
-    pub supported_events: AttributeSet<EventType>,
-    pub supported_keys: AttributeSet<KeyCode>,
-}
-
-impl From<&Device> for DeviceAttributes {
-    fn from(device: &Device) -> Self {
-        Self {
-            name: device.name().map(str::to_string),
-            supported_events: device.supported_events().iter().collect(),
-            supported_keys: device
-                .supported_keys()
-                .map(|keys| keys.iter().collect())
-                .unwrap_or_default(),
-        }
-    }
-}
-
-impl DeviceAttributesLike for DeviceAttributes {
-    fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
-
-    fn has_event(&self, event: EventType) -> bool {
-        self.supported_events.contains(event)
-    }
-
-    fn has_key(&self, key: KeyCode) -> bool {
-        self.supported_keys.contains(key)
-    }
-}
-
-impl DeviceAttributesLike for Device {
-    fn name(&self) -> Option<&str> {
-        self.name()
-    }
-
-    fn has_event(&self, event: EventType) -> bool {
-        self.supported_events().contains(event)
-    }
+    fn supported_keys(&self) -> Option<&AttributeSet<KeyCode>>;
+    fn supported_relative_axis(&self) -> Option<&AttributeSet<RelativeAxisCode>>;
+    fn supported_absolute_axis(&self) -> Option<&AttributeSet<AbsoluteAxisCode>>;
+    fn properties(&self) -> &AttributeSet<PropType>;
 
     fn has_key(&self, key: KeyCode) -> bool {
         self.supported_keys().is_some_and(|sk| sk.contains(key))
     }
+    fn has_relative(&self, rel: RelativeAxisCode) -> bool {
+        self.supported_relative_axis()
+            .is_some_and((|sra| sra.contains(rel)))
+    }
+    fn has_absolute(&self, abs: AbsoluteAxisCode) -> bool {
+        self.supported_absolute_axis()
+            .is_some_and(|saa| saa.contains(abs))
+    }
 }
 
-// TODO: Make this more DRY - also, make other traits like AxisDeviceAttributesLike
+pub trait DeviceState {
+    fn pressed_keys(&self) -> io::Result<AttributeSet<KeyCode>>;
+    fn relative_axis_values(&self) -> io::Result<Vec<(RelativeAxisCode, i32)>>;
+    fn absolute_axis_values(&self) -> io::Result<Vec<(AbsoluteAxisCode, i32)>>;
+}
