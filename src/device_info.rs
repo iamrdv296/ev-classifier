@@ -1,6 +1,4 @@
-use evdev::{
-    AbsoluteAxisCode, AttributeSetRef, Device, KeyCode, PropType, RelativeAxisCode,
-};
+use evdev::{AbsoluteAxisCode, AttributeSetRef, Device, KeyCode, PropType, RelativeAxisCode};
 
 pub trait DeviceInfo {
     fn name(&self) -> Option<&str>;
@@ -12,22 +10,33 @@ pub trait DeviceInfo {
     fn has_key(&self, key: KeyCode) -> bool {
         self.supported_keys().is_some_and(|sk| sk.contains(key))
     }
+
     fn has_relative(&self, rel: RelativeAxisCode) -> bool {
         self.supported_relative_axes()
             .is_some_and(|sra| sra.contains(rel))
     }
+
     fn has_absolute(&self, abs: AbsoluteAxisCode) -> bool {
         self.supported_absolute_axes()
             .is_some_and(|saa| saa.contains(abs))
     }
+
     fn has_property(&self, prop: PropType) -> bool {
         self.properties().contains(prop)
+    }
+
+    fn rel_xy(&self) -> bool {
+        self.has_relative(RelativeAxisCode::REL_X) && self.has_relative(RelativeAxisCode::REL_Y)
+    }
+
+    fn abs_xy(&self) -> bool {
+        self.has_absolute(AbsoluteAxisCode::ABS_X) && self.has_absolute(AbsoluteAxisCode::ABS_Y)
     }
 }
 
 impl DeviceInfo for Device {
     fn name(&self) -> Option<&str> {
-        self.name()
+        Device::name(self)
     }
 
     fn supported_keys(&self) -> Option<&AttributeSetRef<KeyCode>> {
