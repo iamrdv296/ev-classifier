@@ -1,7 +1,14 @@
 [package]
-name = "ev-classifier"
+name = "evdev-classifier"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+description = "Classify Linux evdev input devices (keyboard, mouse, touchpad, gamepad, ...) from their capabilities"
+license = "MIT"
+repository = "https://github.com/iamrdv296/ev-classifier"
+readme = "README.md"
+keywords = ["evdev", "linux", "input", "touchpad", "gamepad"]
+categories = ["os::linux-apis", "hardware-support"]
 
 [dependencies]
 evdev = "0.13.2"

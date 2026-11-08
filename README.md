@@ -20,7 +20,7 @@ The kernel's evdev interface only reports a device's raw capabilities (which key
 evdev-classifier = "0.1"
 ```
 
-Requires Rust 1.70 or newer.
+Requires Rust 1.85 or newer
 
 ## Quick start
 
