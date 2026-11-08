@@ -92,7 +92,7 @@ pub trait Classifier: DeviceInfo {
             KeyCode::KEY_VOLUMEUP,
             KeyCode::KEY_VOLUMEDOWN,
             KeyCode::KEY_MUTE,
-        ]) && self.has_any_key(&[
+        ]) || self.has_any_key(&[
             KeyCode::KEY_PLAYPAUSE,
             KeyCode::KEY_PLAYCD,
             KeyCode::KEY_NEXTSONG,
@@ -101,7 +101,7 @@ pub trait Classifier: DeviceInfo {
 
     // ----- direct / absolute pointing --------------------------------------
     fn is_pen_tablet(&self) -> bool {
-        self.has_abs_position() && self.has_pen_tool() && !self.has_property(PropType::DIRECT)
+        self.has_abs_position() && self.has_pen_tool()
     }
 
     fn is_touchscreen(&self) -> bool {
