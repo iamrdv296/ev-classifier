@@ -5,8 +5,9 @@ pub mod discovery;
 pub use classifier::Classifier;
 pub use device_info::DeviceInfo;
 pub use discovery::DeviceDiscovery;
-use evdev::Device;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum DeviceKind {
     Keyboard,
     PowerButton,
@@ -23,7 +24,7 @@ pub enum DeviceKind {
     Unknown,
 }
 
-pub fn classify_device(device: &Device) -> DeviceKind {
+pub fn classify_device<D: DeviceInfo + ?Sized>(device: &D) -> DeviceKind {
     if device.is_keyboard() {
         DeviceKind::Keyboard
     } else if device.is_power_button() {
@@ -53,7 +54,7 @@ pub fn classify_device(device: &Device) -> DeviceKind {
     }
 }
 
-pub fn classify_all_devices(devices: Vec<&Device>) -> Vec<(&Device, DeviceKind)> {
+pub fn classify_all_devices<D: DeviceInfo + ?Sized>(devices: Vec<&D>) -> Vec<(&D, DeviceKind)> {
     devices
         .iter()
         .map(|&device| (device, classify_device(device)))
