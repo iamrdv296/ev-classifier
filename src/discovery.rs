@@ -147,7 +147,10 @@ mod tests {
         let dir = TestDir::new();
         let missing = dir.path().join("does-not-exist");
 
-        let error = DeviceDiscovery::from_path(Some(&missing)).unwrap_err();
+        let error = match DeviceDiscovery::from_path(Some(&missing)) {
+            Ok(_) => panic!("expected a missing path to return an error"),
+            Err(error) => error,
+        };
 
         assert_eq!(error.kind(), io::ErrorKind::NotFound);
     }
