@@ -88,7 +88,7 @@ pub trait Classifier: DeviceInfo {
     }
 
     fn is_media_keys(&self) -> bool {
-        self.has_any_key(&[
+        (self.has_any_key(&[
             KeyCode::KEY_VOLUMEUP,
             KeyCode::KEY_VOLUMEDOWN,
             KeyCode::KEY_MUTE,
@@ -96,7 +96,7 @@ pub trait Classifier: DeviceInfo {
             KeyCode::KEY_PLAYPAUSE,
             KeyCode::KEY_PLAYCD,
             KeyCode::KEY_NEXTSONG,
-        ]) && !self.is_keyboard()
+        ])) && !self.is_keyboard()
     }
 
     // ----- direct / absolute pointing --------------------------------------
