@@ -2,6 +2,9 @@ pub mod classifier;
 pub mod device_info;
 pub mod discovery;
 
+#[cfg(test)]
+mod tests;
+
 pub use classifier::Classifier;
 pub use device_info::DeviceInfo;
 pub use discovery::DeviceDiscovery;
