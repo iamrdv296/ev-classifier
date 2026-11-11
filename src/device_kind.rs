@@ -3,6 +3,9 @@ use bitflags::bitflags;
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     #[non_exhaustive]
+
+    /// Device Kind is a bitflag that represents which device kind a device is.
+    /// It isn't a simple enum because, e.g. some devices can be both media keys and keyboard
     pub struct DeviceKind: usize {
         const KEYBOARD = 1 << 0;
         const POWER_BUTTON = 1 << 1;

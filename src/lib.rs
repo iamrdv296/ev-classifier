@@ -1,7 +1,7 @@
 pub mod classifier;
 pub mod device_info;
-pub mod discovery;
 pub mod device_kind;
+pub mod discovery;
 
 #[cfg(test)]
 mod tests;
