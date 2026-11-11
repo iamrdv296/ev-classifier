@@ -11,4 +11,5 @@ keywords = ["evdev", "linux", "input", "touchpad", "gamepad"]
 categories = ["os::linux-apis", "hardware-support"]
 
 [dependencies]
+bitflags = "2.13.2"
 evdev = "0.13.2"
