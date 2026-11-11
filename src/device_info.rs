@@ -8,6 +8,22 @@ const MT_AXES: [AbsoluteAxisCode; 5] = [
     AbsoluteAxisCode::ABS_MT_TRACKING_ID,
 ];
 
+const ABSOLUTE_XY_AXES: [AbsoluteAxisCode; 2] = [AbsoluteAxisCode::ABS_X, AbsoluteAxisCode::ABS_Y];
+
+const RELATIVE_XY_AXES: [RelativeAxisCode; 2] = [RelativeAxisCode::REL_X, RelativeAxisCode::REL_Y];
+
+const MT_XY_AXES: [AbsoluteAxisCode; 2] = [
+    AbsoluteAxisCode::ABS_MT_POSITION_X,
+    AbsoluteAxisCode::ABS_MT_POSITION_Y,
+];
+
+const WHEEL_AXES: [RelativeAxisCode; 4] = [
+    RelativeAxisCode::REL_WHEEL,
+    RelativeAxisCode::REL_HWHEEL,
+    RelativeAxisCode::REL_WHEEL_HI_RES,
+    RelativeAxisCode::REL_HWHEEL_HI_RES,
+];
+
 pub trait DeviceInfo {
     fn name(&self) -> Option<&str>;
     fn supported_keys(&self) -> Option<&AttributeSetRef<KeyCode>>;
@@ -17,6 +33,14 @@ pub trait DeviceInfo {
 
     fn has_key(&self, key: KeyCode) -> bool {
         self.supported_keys().is_some_and(|sk| sk.contains(key))
+    }
+
+    fn has_any_key(&self, keys: &[KeyCode]) -> bool {
+        has_any(keys, |&k| self.has_key(k))
+    }
+
+    fn has_all_keys(&self, keys: &[KeyCode]) -> bool {
+        has_all(keys, |&k| self.has_key(k))
     }
 
     fn has_relative(&self, rel: RelativeAxisCode) -> bool {
@@ -34,59 +58,23 @@ pub trait DeviceInfo {
     }
 
     fn rel_xy(&self) -> bool {
-        self.has_all_relative(&[RelativeAxisCode::REL_X, RelativeAxisCode::REL_Y])
+        has_all(&RELATIVE_XY_AXES, |&r| self.has_relative(r))
     }
 
     fn abs_xy(&self) -> bool {
-        self.has_all_absolute(&[AbsoluteAxisCode::ABS_X, AbsoluteAxisCode::ABS_Y])
-    }
-
-    fn has_any_key(&self, keys: &[KeyCode]) -> bool {
-        keys.iter().any(|&k| self.has_key(k))
-    }
-
-    fn has_all_keys(&self, keys: &[KeyCode]) -> bool {
-        keys.iter().all(|&k| self.has_key(k))
-    }
-
-    fn has_any_relative(&self, axes: &[RelativeAxisCode]) -> bool {
-        axes.iter().any(|&a| self.has_relative(a))
-    }
-
-    fn has_all_relative(&self, axes: &[RelativeAxisCode]) -> bool {
-        axes.iter().all(|&a| self.has_relative(a))
-    }
-
-    fn has_any_absolute(&self, axes: &[AbsoluteAxisCode]) -> bool {
-        axes.iter().any(|&a| self.has_absolute(a))
-    }
-
-    fn has_all_absolute(&self, axes: &[AbsoluteAxisCode]) -> bool {
-        axes.iter().all(|&a| self.has_absolute(a))
-    }
-
-    fn has_any_property(&self, props: &[PropType]) -> bool {
-        props.iter().any(|&p| self.has_property(p))
+        has_all(&ABSOLUTE_XY_AXES, |&a| self.has_absolute(a))
     }
 
     fn abs_mt_xy(&self) -> bool {
-        self.has_all_absolute(&[
-            AbsoluteAxisCode::ABS_MT_POSITION_X,
-            AbsoluteAxisCode::ABS_MT_POSITION_Y,
-        ])
+        has_all(&MT_XY_AXES, |&m| self.has_absolute(m))
     }
 
     fn has_mt_axis(&self) -> bool {
-        self.has_any_absolute(&MT_AXES)
+        has_any(&MT_AXES, |&a| self.has_absolute(a))
     }
 
     fn has_wheel(&self) -> bool {
-        self.has_any_relative(&[
-            RelativeAxisCode::REL_WHEEL,
-            RelativeAxisCode::REL_HWHEEL,
-            RelativeAxisCode::REL_WHEEL_HI_RES,
-            RelativeAxisCode::REL_HWHEEL_HI_RES,
-        ])
+        has_any(&WHEEL_AXES, |&w| self.has_relative(w))
     }
 }
 
@@ -96,18 +84,26 @@ impl DeviceInfo for Device {
     }
 
     fn supported_keys(&self) -> Option<&AttributeSetRef<KeyCode>> {
-        self.supported_keys()
+        Device::supported_keys(self)
     }
 
     fn supported_absolute_axes(&self) -> Option<&AttributeSetRef<AbsoluteAxisCode>> {
-        self.supported_absolute_axes()
+        Device::supported_absolute_axes(self)
     }
 
     fn supported_relative_axes(&self) -> Option<&AttributeSetRef<RelativeAxisCode>> {
-        self.supported_relative_axes()
+        Device::supported_relative_axes(self)
     }
 
     fn properties(&self) -> &AttributeSetRef<PropType> {
-        self.properties()
+        Device::properties(self)
     }
+}
+
+fn has_any<T>(slice: &[T], condition: impl FnMut(&T) -> bool) -> bool {
+    slice.iter().any(condition)
+}
+
+fn has_all<T>(slice: &[T], condition: impl FnMut(&T) -> bool) -> bool {
+    slice.iter().all(condition)
 }
