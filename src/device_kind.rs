@@ -18,6 +18,6 @@ bitflags! {
         const MOUSE = 1 << 8;
         const GAMEPAD = 1 << 9;
         const JOYSTICK = 1 << 10;
-        const ACCELEROMETER = 1 << 1;
+        const ACCELEROMETER = 1 << 11;
     }
 }
