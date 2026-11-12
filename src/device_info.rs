@@ -45,6 +45,19 @@ const WHEEL_AXES: [RelativeAxisCode; 4] = [
     RelativeAxisCode::REL_HWHEEL_HI_RES,
 ];
 
+/// The four directional pad buttons (`BTN_DPAD_UP`, `BTN_DPAD_DOWN`,
+/// `BTN_DPAD_LEFT`, and `BTN_DPAD_RIGHT`).
+///
+/// Some controllers report their D-pad as discrete buttons rather than as a
+/// hat axis. A device must support all four to count as having a D-pad. Used
+/// by [`DeviceInfo::has_directional_input`].
+const DPAD_KEYS: [KeyCode; 4] = [
+    KeyCode::BTN_DPAD_UP,
+    KeyCode::BTN_DPAD_DOWN,
+    KeyCode::BTN_DPAD_LEFT,
+    KeyCode::BTN_DPAD_RIGHT,
+];
+
 /// Read-only description of an input device's capabilities.
 ///
 /// This abstracts over [`evdev::Device`] so that capability checks (and the
@@ -152,6 +165,26 @@ pub trait DeviceInfo {
         has_any(&MT_AXES, |&a| self.has_absolute(a))
     }
 
+    /// Returns `true` if the device provides some form of directional input.
+    ///
+    /// This is the case if it supports any of:
+    ///
+    /// - the absolute position axes (`ABS_X` and `ABS_Y`), such as an analog
+    ///   stick,
+    /// - the `ABS_HAT0X` axis, which is how many controllers report a D-pad
+    ///   as a hat switch, or
+    /// - all four D-pad buttons (`BTN_DPAD_UP`, `BTN_DPAD_DOWN`,
+    ///   `BTN_DPAD_LEFT`, and `BTN_DPAD_RIGHT`).
+    ///
+    /// Note that this is a broad capability check and is not specific to
+    /// game controllers: any device with `ABS_X` and `ABS_Y` (such as a
+    /// touchscreen or tablet) will also return `true`.
+    fn has_directional_input(&self) -> bool {
+        self.abs_xy()
+            || self.has_absolute(AbsoluteAxisCode::ABS_HAT0X)
+            || self.has_all_keys(&DPAD_KEYS)
+    }
+    
     /// Returns `true` if the device has any scroll wheel axis, vertical or
     /// horizontal, including the high-resolution variants.
     fn has_wheel(&self) -> bool {
