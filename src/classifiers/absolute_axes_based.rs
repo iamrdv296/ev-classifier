@@ -50,13 +50,15 @@ pub trait AbsoluteAxesBased: DeviceInfo {
     /// Returns `true` if the device is a touchscreen.
     ///
     /// A device is considered a touchscreen if it has the `INPUT_PROP_DIRECT`
-    /// property (input is applied directly on the display) and either:
+    /// property (input is applied directly on the display), doesn't have any pen tools buttons 
+    /// and either:
     ///
     /// - supports the multi-touch position axes, or
     /// - supports the single-touch axes (`ABS_X` and `ABS_Y`) together with
     ///   `BTN_TOUCH`.
     fn is_touchscreen(&self) -> bool {
         self.has_property(PropType::DIRECT)
+            && !self.has_any_key(&PEN_TOOLS)
             && (self.abs_mt_xy() || (self.abs_xy() && self.has_key(KeyCode::BTN_TOUCH)))
     }
 

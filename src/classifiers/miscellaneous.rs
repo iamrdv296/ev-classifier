@@ -1,18 +1,5 @@
-use crate::DeviceInfo;
+use crate::{DeviceInfo, classifiers::absolute_axes_based::AbsoluteAxesBased};
 use evdev::{AbsoluteAxisCode, KeyCode, PropType};
-
-/// The four face buttons of a standard gamepad.
-///
-/// `BTN_SOUTH`, `BTN_EAST`, `BTN_NORTH`, and `BTN_WEST` are the positional
-/// names for the diamond of face buttons (e.g. A, B, Y, X on an Xbox
-/// controller). Having any one of these marks a device as a candidate for a
-/// gamepad. Used by [`Miscellaneous::is_gamepad`].
-const GAMEPAD_BUTTONS: [KeyCode; 4] = [
-    KeyCode::BTN_SOUTH,
-    KeyCode::BTN_EAST,
-    KeyCode::BTN_NORTH,
-    KeyCode::BTN_WEST,
-];
 
 /// Classifies devices that don't fit the other classifier traits.
 ///
@@ -28,11 +15,13 @@ const GAMEPAD_BUTTONS: [KeyCode; 4] = [
 pub trait Miscellaneous: DeviceInfo {
     /// Returns `true` if the device is a gamepad.
     ///
-    /// A device is considered a gamepad if it supports at least one face
-    /// button (`BTN_SOUTH`, `BTN_EAST`, `BTN_NORTH`, or `BTN_WEST`) and
-    /// provides directional input (see `has_directional_input`).
+    /// A device is considered a gamepad if it supports `BTN_SOUTH`,
+    /// provides directional input (see `has_directional_input`) and is not a more
+    /// specific absolute device (see [`AbsoluteAxesBased::is_specific_absolute`]).
     fn is_gamepad(&self) -> bool {
-        self.has_any_key(&GAMEPAD_BUTTONS) && self.has_directional_input()
+        self.has_key(KeyCode::BTN_SOUTH)
+            && self.has_directional_input()
+            && !self.is_specific_absolute()
     }
 
     /// Returns `true` if the device is a joystick (e.g. a flight stick).
