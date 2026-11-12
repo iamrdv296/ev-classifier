@@ -72,6 +72,10 @@ pub trait AbsoluteAxesBased: DeviceInfo {
             && self.has_property(PropType::POINTER)
             && self.has_any_key(&FINGER_TOOLS)
     }
+
+    fn is_specific_absolute(&self) -> bool {
+        self.is_pen_tablet() || self.is_touchpad() || self.is_touchscreen()
+    }
 }
 
 impl<T: DeviceInfo + ?Sized> AbsoluteAxesBased for T {}
