@@ -15,7 +15,7 @@ use evdev::{AbsoluteAxisCode, KeyCode, PropType};
 pub trait Miscellaneous: DeviceInfo {
     /// Returns `true` if the device is a gamepad.
     ///
-    /// A device is considered a gamepad if it supports `BTN_SOUTH`,
+    /// A device is considered a gamepad if it supports `BTN_SOUTH` (standardized button check),
     /// provides directional input (see `has_directional_input`) and is not a more
     /// specific absolute device (see [`AbsoluteAxesBased::is_specific_absolute`]).
     fn is_gamepad(&self) -> bool {
