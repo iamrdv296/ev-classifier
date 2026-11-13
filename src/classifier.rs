@@ -25,35 +25,20 @@ bitflags! {
 }
 
 pub fn classify_device<D: DeviceInfo + ?Sized>(device: &D) -> DeviceKind {
-    let mut flags = DeviceKind::empty();
-    
-    if device.is_keyboard() {
-        flags.insert(DeviceKind::KEYBOARD);
-    } if device.is_power_button() {
-        flags.insert(DeviceKind::POWER_BUTTON);
-    } if device.is_sleep_button() {
-        flags.insert(DeviceKind::SLEEP_BUTTON);
-    } if device.is_media_keys() {
-        flags.insert(DeviceKind::MEDIA_KEYS);
-    } if device.is_pen_tablet() {
-        flags.insert(DeviceKind::PEN_TABLET);
-    } if device.is_touchscreen() {
-        flags.insert(DeviceKind::TOUCH_SCREEN);
-    } if device.is_touchpad() {
-        flags.insert(DeviceKind::TOUCH_PAD);
-    } if device.is_pointing_stick() {
-        flags.insert(DeviceKind::POINTING_STICK);
-    } if device.is_mouse() {
-        flags.insert(DeviceKind::MOUSE);
-    } if device.is_gamepad() {
-        flags.insert(DeviceKind::GAMEPAD);
-    } if device.is_joystick() {
-        flags.insert(DeviceKind::JOYSTICK);
-    } if device.is_accelerometer() {
-        flags.insert(DeviceKind::ACCELEROMETER);
-    } 
-
-    flags
+    let mut kind = DeviceKind::empty();
+    kind.set(DeviceKind::KEYBOARD, device.is_keyboard());
+    kind.set(DeviceKind::POWER_BUTTON, device.is_power_button());
+    kind.set(DeviceKind::SLEEP_BUTTON, device.is_sleep_button());
+    kind.set(DeviceKind::MEDIA_KEYS, device.is_media_keys());
+    kind.set(DeviceKind::PEN_TABLET, device.is_pen_tablet());
+    kind.set(DeviceKind::TOUCH_SCREEN, device.is_touchscreen());
+    kind.set(DeviceKind::TOUCH_PAD, device.is_touchpad());
+    kind.set(DeviceKind::POINTING_STICK, device.is_pointing_stick());
+    kind.set(DeviceKind::MOUSE, device.is_mouse());
+    kind.set(DeviceKind::GAMEPAD, device.is_gamepad());
+    kind.set(DeviceKind::JOYSTICK, device.is_joystick());
+    kind.set(DeviceKind::ACCELEROMETER, device.is_accelerometer());
+    kind
 }
 
 pub fn classify_all_devices<D: DeviceInfo + ?Sized>(devices: Vec<&D>) -> Vec<(&D, DeviceKind)> {
