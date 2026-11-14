@@ -1,132 +1,169 @@
 # evdev-classifier
 
-Classify Linux input devices (`/dev/input/event*`) by what they *are*: keyboard, mouse, touchpad, touchscreen, gamepad, and so on.
+Classify Linux input devices (`/dev/input/event*`) by their capabilities: keyboards, mice, touchpads, touchscreens, gamepads, joysticks, and more.
 
-The kernel's evdev interface only reports a device's raw capabilities (which keys, axes and properties it supports). It never says "this is a touchpad". This crate looks at those capabilities and applies a set of heuristics to name the device type for you.
+The kernel's evdev interface reports raw capabilities (supported keys, axes, and input properties), not semantic device types. This crate applies heuristics to those capabilities.
 
-> **Linux only.** This crate builds on [`evdev`](https://crates.io/crates/evdev), which does not compile on macOS or Windows.
+> **Linux only.** This crate uses [`evdev`](https://crates.io/crates/evdev), which does not compile on macOS or Windows.
 
 ## Features
 
-- Classifies devices into a `DeviceKind` enum (`Keyboard`, `Mouse`, `TouchPad`, `Gamepad`, ...).
-- Individual `is_*` predicates (`is_keyboard()`, `is_touchpad()`, ...) if you want to ask a specific question.
-- Device discovery that scans `/dev/input`, sorts `event2` before `event10`, and reports devices it couldn't open instead of failing.
-- Hardware-free testing: classification works on any type implementing the `DeviceInfo` trait, so you can classify mock devices in unit tests.
+- Classifies devices into a `DeviceKind` bitflag set.
+- Supports overlapping classifications: a multimedia keyboard can be both `KEYBOARD` and `MEDIA_KEYS`.
+- Provides individual `is_*` predicates through specialized classifier traits.
+- Discovers devices under `/dev/input`, sorts `event2` before `event10`, and records devices it could not open.
+- Supports hardware-free classification tests through the `DeviceInfo` trait.
 
 ## Installation
 
 ```toml
 [dependencies]
-evdev-classifier = "0.1"
+evdev-classifier = "0.2"
 ```
 
-Requires Rust 1.85 or newer
+Requires Rust 1.85 or newer.
 
 ## Quick start
 
 ```rust
-use evdev_classifier::{classify_device, DeviceDiscovery};
+use evdev_classifier::{classify_device, DeviceDiscovery, DeviceKind};
 
 fn main() -> std::io::Result<()> {
-    // Scan /dev/input. Pass Some(path) to scan another directory or open one device.
     let discovery = DeviceDiscovery::from_path(None)?;
 
     for device in &discovery.devices {
         let name = device.name().unwrap_or("unnamed");
-        println!("{name}: {:?}", classify_device(device));
+        let kinds = classify_device(device);
+
+        if kinds.contains(DeviceKind::KEYBOARD) {
+            println!("{name}: keyboard");
+        }
+
+        println!("{name}: {kinds:?}");
     }
 
-    // Devices that couldn't be opened (usually permission errors).
     for (path, err) in &discovery.skipped {
         eprintln!("skipped {}: {err}", path.display());
     }
+
     Ok(())
 }
 ```
 
-Classify a whole batch:
+## Working with classifications
+
+`DeviceKind` is a bitflag set rather than an enum. A device can match several classifications at once.
 
 ```rust
-use evdev_classifier::{classify_all_devices, DeviceDiscovery};
+use evdev_classifier::{classify_device, DeviceKind};
 
-let discovery = DeviceDiscovery::from_path(None)?;
-let refs: Vec<_> = discovery.devices.iter().collect();
-for (device, kind) in classify_all_devices(refs) {
-    println!("{:?}: {kind:?}", device.name());
+let kinds = classify_device(&device);
+
+if kinds.contains(DeviceKind::KEYBOARD | DeviceKind::MEDIA_KEYS) {
+    println!("Multimedia keyboard");
 }
-# Ok::<(), std::io::Error>(())
+
+if kinds.intersects(DeviceKind::MOUSE | DeviceKind::TOUCH_PAD) {
+    println!("Pointing device");
+}
 ```
 
-Or ask a specific question using the `Classifier` trait:
+Use bitwise OR to combine flags, `contains` to check that all requested flags are present, and `intersects` to check whether at least one requested flag is present. An empty set means that no known classification matched.
+
+### Choosing one classification
+
+If an application needs a single label, `first` selects the highest-priority classification from a collection:
 
 ```rust
-use evdev_classifier::Classifier;
+use evdev_classifier::{first, DeviceKind};
 
-# fn demo(device: &evdev::Device) {
+let kinds = [
+    DeviceKind::KEYBOARD | DeviceKind::MEDIA_KEYS,
+    DeviceKind::MOUSE,
+];
+
+let primary = first(&kinds);
+assert_eq!(primary, DeviceKind::MOUSE);
+```
+
+The priority order is defined by the crate. It is a convenience for choosing one label; it does not change the original classification sets.
+
+## Individual capability checks
+
+The classifier traits expose individual checks. Import the trait whose methods you want to use:
+
+```rust
+use evdev_classifier::absolute_axes_based::AbsoluteAxesBased;
+
 if device.is_touchpad() {
-    // ...
+    println!("Touchpad detected");
 }
-# }
 ```
 
-## Permissions
+Available classifier traits:
+
+- `key_based::KeyBased`: keyboards, power buttons, sleep buttons, and media keys.
+- `absolute_axes_based::AbsoluteAxesBased`: pen tablets, touchscreens, and touchpads.
+- `relative_axes_based::RelativeAxesBased`: mice and pointing sticks.
+- `miscellaneous::Miscellaneous`: gamepads, joysticks, and accelerometers.
+
+These traits are blanket-implemented for types that implement `DeviceInfo`; applications do not need to implement the classifier traits themselves.
+
+Individual checks can overlap. `classify_device` collects all matching flags rather than stopping at the first match.
+
+## Device discovery
+
+`DeviceDiscovery::from_path(None)` scans `/dev/input`.
+
+You can also provide a directory or a single device path:
+
+```rust
+use evdev_classifier::DeviceDiscovery;
+use std::{io, path::Path};
+
+fn main() -> io::Result<()> {
+    let discovery = DeviceDiscovery::from_path(Some(Path::new("/dev/input")))?;
+    println!("Found {} devices", discovery.devices.len());
+    Ok(())
+}
+```
+
+Directory scans consider entries named `event` followed by a non-negative integer and sort them numerically. Devices that cannot be opened are stored in `DeviceDiscovery::skipped`; an individual open failure does not abort the scan.
 
 Reading `/dev/input/event*` normally requires root or membership in the `input` group:
 
 ```sh
-sudo usermod -aG input "$USER"   # log out and back in afterwards
+sudo usermod -aG input "$USER"
 ```
 
-Devices you can't open end up in `DeviceDiscovery::skipped` rather than aborting discovery.
+Log out and back in after changing group membership.
 
-## Device kinds
+## Classification heuristics
 
-| `DeviceKind`    | Detected when the device...                                                              |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `Keyboard`      | supports all 26 letter keys plus Enter and Space                                         |
-| `PowerButton`   | supports `KEY_POWER` and is not a keyboard                                               |
-| `SleepButton`   | supports `KEY_SLEEP` and is not a keyboard                                               |
-| `MediaKeys`     | supports volume or transport keys (play/pause, next) and is not a keyboard              |
-| `PenTablet`     | reports absolute position and has a pen tool (`BTN_TOOL_PEN` / `BTN_STYLUS`)             |
-| `TouchScreen`   | reports absolute position, has no pen tool, and is `DIRECT` (or has `BTN_TOUCH` without finger tools) |
-| `TouchPad`      | reports absolute position, has finger tools, no pen tool, and is not `DIRECT`            |
-| `PointingStick` | reports relative X/Y and has the `POINTING_STICK` property                               |
-| `Mouse`         | has `BTN_LEFT` and either relative X/Y, or absolute X/Y that isn't a pen/touch device    |
-| `Gamepad`       | has face buttons (`BTN_SOUTH`/`EAST`/`NORTH`/`WEST`) and directional input               |
-| `Joystick`      | has `BTN_TRIGGER` and directional input, right stick or throttle, and is not a gamepad   |
-| `Accelerometer` | has the `ACCELEROMETER` property                                                         |
-| `Unknown`       | matches none of the above                                                                |
+The classifications are capability-based heuristics, not guarantees. In broad terms:
 
-`DeviceKind` is `#[non_exhaustive]`, so new kinds can be added without a breaking change. Include a wildcard arm when you `match` on it.
+| Classification | Detected when the device... |
+|---|---|
+| `KEYBOARD` | Supports all 26 letter keys, Enter, and Space |
+| `POWER_BUTTON` | Supports `KEY_POWER` |
+| `SLEEP_BUTTON` | Supports `KEY_SLEEP` |
+| `MEDIA_KEYS` | Supports volume or media playback keys |
+| `PEN_TABLET` | Reports absolute position and a pen tool |
+| `TOUCH_SCREEN` | Has the `DIRECT` property, no pen tool, and suitable touch axes |
+| `TOUCH_PAD` | Reports absolute position, the `POINTER` property, and finger tools |
+| `POINTING_STICK` | Reports relative X/Y and the `POINTING_STICK` property |
+| `MOUSE` | Has `BTN_LEFT` and suitable relative axes, or absolute axes plus a wheel |
+| `GAMEPAD` | Has `BTN_SOUTH` and directional input |
+| `JOYSTICK` | Has `BTN_TRIGGER` and directional, rotation, or throttle input |
+| `ACCELEROMETER` | Has the `ACCELEROMETER` property |
 
-## How classification works
+Because checks are independent, a device may match more than one row. For example, a device can expose both gamepad and joystick capabilities.
 
-`classify_device` checks the kinds **in the order listed above** and returns the first match. This matters because real hardware often satisfies several predicates at once. For example, a laptop touchpad with `BTN_LEFT` also looks like an absolute mouse, so `Mouse` explicitly excludes pens, touchpads and touchscreens, and the priority order resolves the rest.
-
-If you call the individual `is_*` predicates directly, remember they can overlap. `classify_device` is the one that picks a single answer.
-
-These are heuristics, not guarantees. If a device is misclassified, please open an issue with the output of `evtest` or `udevadm info` for it.
+If a device is misclassified, please open an issue with relevant output from `evtest` or `udevadm info`.
 
 ## Testing without hardware
 
-Anything implementing `DeviceInfo` can be classified, which makes unit tests easy:
-
-```rust
-use evdev_classifier::{classify_device, DeviceInfo, DeviceKind};
-use evdev::{AbsoluteAxisCode, AttributeSetRef, KeyCode, PropType, RelativeAxisCode};
-
-struct Fake { /* store AttributeSets here */ }
-
-impl DeviceInfo for Fake {
-    fn name(&self) -> Option<&str> { Some("fake") }
-    fn supported_keys(&self) -> Option<&AttributeSetRef<KeyCode>> { todo!() }
-    fn supported_relative_axes(&self) -> Option<&AttributeSetRef<RelativeAxisCode>> { todo!() }
-    fn supported_absolute_axes(&self) -> Option<&AttributeSetRef<AbsoluteAxisCode>> { todo!() }
-    fn properties(&self) -> &AttributeSetRef<PropType> { todo!() }
-}
-```
-
-See `src/tests.rs` for a complete builder-style mock used by this crate's own test suite.
+Classification works with any type implementing `DeviceInfo`, so tests do not need access to real input devices. The crate's test suite uses mock capability sets to cover individual flags, overlapping flags, and priority selection.
 
 ## Development
 
@@ -136,4 +173,4 @@ cargo clippy --all-targets
 cargo test
 ```
 
-Tests run without any input hardware.
+Tests run without input hardware.
