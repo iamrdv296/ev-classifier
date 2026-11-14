@@ -184,7 +184,7 @@ pub trait DeviceInfo {
             || self.has_absolute(AbsoluteAxisCode::ABS_HAT0X)
             || self.has_all_keys(&DPAD_KEYS)
     }
-    
+
     /// Returns `true` if the device has any scroll wheel axis, vertical or
     /// horizontal, including the high-resolution variants.
     fn has_wheel(&self) -> bool {

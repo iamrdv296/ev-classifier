@@ -50,7 +50,7 @@ pub trait AbsoluteAxesBased: DeviceInfo {
     /// Returns `true` if the device is a touchscreen.
     ///
     /// A device is considered a touchscreen if it has the `INPUT_PROP_DIRECT`
-    /// property (input is applied directly on the display), doesn't have any pen tools buttons 
+    /// property (input is applied directly on the display), doesn't have any pen tools buttons
     /// and either:
     ///
     /// - supports the multi-touch position axes, or
@@ -73,10 +73,6 @@ pub trait AbsoluteAxesBased: DeviceInfo {
         self.has_abs_position()
             && self.has_property(PropType::POINTER)
             && self.has_any_key(&FINGER_TOOLS)
-    }
-
-    fn is_specific_absolute(&self) -> bool {
-        self.is_pen_tablet() || self.is_touchpad() || self.is_touchscreen()
     }
 }
 

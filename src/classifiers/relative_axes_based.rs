@@ -1,4 +1,4 @@
-use crate::{DeviceInfo, classifiers::absolute_axes_based::AbsoluteAxesBased};
+use crate::DeviceInfo;
 use evdev::{KeyCode, PropType};
 
 /// Classifies devices by their relative axes, buttons, and input properties.
@@ -29,18 +29,17 @@ pub trait RelativeAxesBased: DeviceInfo {
     /// - **Relative:** it supports `REL_X` and `REL_Y` and does *not* have the
     ///   `INPUT_PROP_POINTING_STICK` property (so pointing sticks are not
     ///   misclassified as mice), or
-    /// - **Absolute:** it supports `ABS_X` and `ABS_Y`, it has a wheel, and is not a more
-    ///   specific absolute device (see
-    ///   [`AbsoluteAxesBased::is_specific_absolute`]). This covers absolute
+    /// - **Absolute:** it supports `ABS_X` and `ABS_Y`, has a wheel.
+    ///   This covers absolute
     ///   pointers such as those exposed by virtual machines.
     fn is_mouse(&self) -> bool {
         if !self.has_key(KeyCode::BTN_LEFT) {
             return false;
         }
-    
+
         let relative = self.rel_xy() && !self.has_property(PropType::POINTING_STICK);
-        let absolute = self.abs_xy() && self.has_wheel() && !self.is_specific_absolute();
-    
+        let absolute = self.abs_xy() && self.has_wheel();
+
         relative || absolute
     }
 }

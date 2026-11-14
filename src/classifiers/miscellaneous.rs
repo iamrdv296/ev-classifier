@@ -1,4 +1,4 @@
-use crate::{DeviceInfo, classifiers::absolute_axes_based::AbsoluteAxesBased};
+use crate::DeviceInfo;
 use evdev::{AbsoluteAxisCode, KeyCode, PropType};
 
 /// Classifies devices that don't fit the other classifier traits.
@@ -15,13 +15,10 @@ use evdev::{AbsoluteAxisCode, KeyCode, PropType};
 pub trait Miscellaneous: DeviceInfo {
     /// Returns `true` if the device is a gamepad.
     ///
-    /// A device is considered a gamepad if it supports `BTN_SOUTH` (standardized button check),
-    /// provides directional input (see `has_directional_input`) and is not a more
-    /// specific absolute device (see [`AbsoluteAxesBased::is_specific_absolute`]).
+    /// A device is considered a gamepad if it supports `BTN_SOUTH` (standardized button check) and
+    /// provides directional input (see `has_directional_input`).
     fn is_gamepad(&self) -> bool {
-        self.has_key(KeyCode::BTN_SOUTH)
-            && self.has_directional_input()
-            && !self.is_specific_absolute()
+        self.has_key(KeyCode::BTN_SOUTH) && self.has_directional_input()
     }
 
     /// Returns `true` if the device is a joystick (e.g. a flight stick).

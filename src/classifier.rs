@@ -1,6 +1,12 @@
 use bitflags::bitflags;
 
-use crate::{DeviceInfo, classifiers::{absolute_axes_based::AbsoluteAxesBased, key_based::KeyBased, miscellaneous::Miscellaneous, relative_axes_based::RelativeAxesBased}};
+use crate::{
+    DeviceInfo,
+    classifiers::{
+        absolute_axes_based::AbsoluteAxesBased, key_based::KeyBased, miscellaneous::Miscellaneous,
+        relative_axes_based::RelativeAxesBased,
+    },
+};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -24,6 +30,21 @@ bitflags! {
     }
 }
 
+const PROMINENCE: [DeviceKind; 12] = [
+    DeviceKind::PEN_TABLET,
+    DeviceKind::TOUCH_SCREEN,
+    DeviceKind::TOUCH_PAD,
+    DeviceKind::MOUSE,
+    DeviceKind::KEYBOARD,
+    DeviceKind::POINTING_STICK,
+    DeviceKind::GAMEPAD,
+    DeviceKind::JOYSTICK,
+    DeviceKind::MEDIA_KEYS,
+    DeviceKind::POWER_BUTTON,
+    DeviceKind::SLEEP_BUTTON,
+    DeviceKind::ACCELEROMETER,
+];
+
 pub fn classify_device<D: DeviceInfo + ?Sized>(device: &D) -> DeviceKind {
     let mut kind = DeviceKind::empty();
     kind.set(DeviceKind::KEYBOARD, device.is_keyboard());
@@ -46,4 +67,15 @@ pub fn classify_all_devices<D: DeviceInfo + ?Sized>(devices: Vec<&D>) -> Vec<(&D
         .iter()
         .map(|&device| (device, classify_device(device)))
         .collect()
+}
+
+pub fn first(kinds: &[DeviceKind]) -> DeviceKind {
+    let all = kinds
+        .iter()
+        .fold(DeviceKind::empty(), |acc, &kind| acc | kind);
+
+    PROMINENCE
+        .into_iter()
+        .find(|&kind| all.contains(kind))
+        .unwrap_or_else(DeviceKind::empty)
 }
