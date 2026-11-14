@@ -5,7 +5,7 @@ use evdev::{KeyCode, PropType};
 ///
 /// This covers pointing devices that report movement as deltas: mice and
 /// pointing sticks. Implementors only need to implement [`DeviceInfo`] (and
-/// [`AbsoluteAxesBased`], which is used to rule out absolute-axis devices
+/// [`crate::classifiers::absolute_axes_based::AbsoluteAxesBased`], which is used to rule out absolute-axis devices
 /// that are not mice); all methods here are provided as defaults.
 ///
 /// Classifications are not mutually exclusive in principle, though

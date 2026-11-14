@@ -67,7 +67,7 @@ impl DeviceDiscovery {
 
 /// Resolves the list of device paths to open for `path`.
 ///
-/// If `path` is `None`, [`DEFAULT_DIR`] is used. If the target is not a
+/// If `path` is `None`, /dev/input is used. If the target is not a
 /// directory, it is returned as the only path. If it is a directory, its
 /// entries are filtered to names of the form `event<N>`, where `<N>` is a
 /// non-negative integer, and sorted numerically by `N` (so `event2` comes

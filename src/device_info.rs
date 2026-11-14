@@ -62,7 +62,7 @@ const DPAD_KEYS: [KeyCode; 4] = [
 ///
 /// This abstracts over [`evdev::Device`] so that capability checks (and the
 /// classification logic built on top of them, such as
-/// [`KeyBased`](crate::KeyBased)) can be run against real devices, test
+/// [`KeyBased`](crate::classifiers::key_based::KeyBased)) can be run against real devices, test
 /// doubles, or trait objects.
 ///
 /// Implementors only need to provide the five required accessors; all the

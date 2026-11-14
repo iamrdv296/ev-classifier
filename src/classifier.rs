@@ -59,7 +59,7 @@ bitflags! {
 ///
 /// The array length must match the number of [`DeviceKind`] flags, so adding a
 /// new flag requires adding it here as well.
-const PROMINENCE: [DeviceKind; 12] = [
+pub const PROMINENCE: [DeviceKind; 12] = [
     DeviceKind::PEN_TABLET,
     DeviceKind::TOUCH_SCREEN,
     DeviceKind::TOUCH_PAD,
