@@ -1,6 +1,6 @@
 [package]
 name = "evdev-classifier"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Classify Linux evdev input devices (keyboard, mouse, touchpad, gamepad, ...) from their capabilities"
@@ -11,4 +11,5 @@ keywords = ["evdev", "linux", "input", "touchpad", "gamepad"]
 categories = ["os::linux-apis", "hardware-support"]
 
 [dependencies]
+bitflags = "2.13.2"
 evdev = "0.13.2"
